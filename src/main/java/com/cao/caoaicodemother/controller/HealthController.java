@@ -15,6 +15,7 @@ public class HealthController {
 
     @GetMapping("/")
     public BaseResponse<String> health() {
+        log.info("health check");
         return ResultUtils.success("ok");
     }
 }
