@@ -1,4 +1,4 @@
-package com.cao.caoaicodemother.common;
+package com.cao.caoaicodemother.exception;
 
 import lombok.Getter;
 
