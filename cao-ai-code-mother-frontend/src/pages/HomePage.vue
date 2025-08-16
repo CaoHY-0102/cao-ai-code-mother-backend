@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import { health as healthCheck } from '@/api/healthController.ts'
 
-healthCheck().then((res) => {
-  console.log(res)
-})
 </script>
 
 <template>
@@ -11,7 +7,7 @@ healthCheck().then((res) => {
     <div class="home-content">
       <h1>欢迎使用编程导航</h1>
       <p>这是一个使用 Vue 3 + TypeScript + Ant Design Vue 构建的前端项目</p>
-      
+
       <div class="features">
         <h2>主要特性：</h2>
         <ul>
