@@ -4,7 +4,9 @@
 // API 唯一标识：
 import * as userController from './userController'
 import * as healthController from './healthController'
+import * as aiCodeGeneratorController from './aiCodeGeneratorController'
 export default {
   userController,
   healthController,
+  aiCodeGeneratorController,
 }

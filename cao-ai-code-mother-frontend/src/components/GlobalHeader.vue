@@ -74,6 +74,11 @@ const originItems = [
     title: '主页',
   },
   {
+    key: '/ai/code/generator',
+    label: 'AI代码生成',
+    title: 'AI代码生成',
+  },
+  {
     key: '/admin/userManage',
     label: '用户管理',
     title: '用户管理',
