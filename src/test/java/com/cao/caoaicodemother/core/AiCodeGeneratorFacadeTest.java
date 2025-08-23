@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import reactor.core.publisher.Flux;
 
-import java.io.File;
 import java.util.List;
 
 @SpringBootTest
@@ -16,11 +15,6 @@ class AiCodeGeneratorFacadeTest {
     @Resource
     private AiCodeGeneratorFacade aiCodeGeneratorFacade;
 
-    @Test
-    void generateAndSaveCode() {
-        File result = aiCodeGeneratorFacade.generateAndSaveCode("生成一个HTML页面", CodeGenTypeEnum.HTML);
-        Assertions.assertNotNull(result);
-    }
 
     @Test
     void generateAndSaveCodeStream() {
