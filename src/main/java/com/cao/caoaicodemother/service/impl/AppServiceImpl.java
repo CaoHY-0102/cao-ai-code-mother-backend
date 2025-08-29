@@ -2,9 +2,13 @@ package com.cao.caoaicodemother.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.cao.caoaicodemother.constant.AppConstant;
 import com.cao.caoaicodemother.constant.UserConstant;
+import com.cao.caoaicodemother.core.AiCodeGeneratorFacade;
 import com.cao.caoaicodemother.exception.BusinessException;
 import com.cao.caoaicodemother.exception.ErrorCode;
 import com.cao.caoaicodemother.exception.ThrowUtils;
@@ -22,7 +26,9 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,9 +46,90 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Resource
     private UserService userService;
 
+    @Resource
+    private AiCodeGeneratorFacade aiCodeGeneratorFacade;
+
+    @Override
+    public String deployApp(Long appId, User loginUser) {
+        // 1.参数校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID不能为空");
+        // 2.获取应用
+        App app = this.getAppById(appId);
+        if (ObjectUtil.isEmpty(app)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        }
+        // 3.仅本人创建的应用可以部署
+        if (!app.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无操作权限访问应用");
+        }
+        // 4.生成deployKey(6位大小写字母+数字),deployKey作为文件名
+        String deployKey = app.getDeployKey();
+        if (StrUtil.isBlank(deployKey)) {
+            deployKey = RandomUtil.randomString(6);
+        }
+        // 获取代码生成类型
+        String codeGenType = app.getCodeGenType();
+        CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByValue(codeGenType);
+        if (codeGenTypeEnum == null) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "代码生成类型错误");
+        }
+        // 5.部署操作,将code_output目录下的临时文件移动到code_deployKey目录下
+        // 构建源目录(../tmp/code_output/multi_file_appId)
+        String sourceName = codeGenTypeEnum.getValue() + "_" + appId;
+        String sourcePath = AppConstant.CODE_OUTPUT_ROOT_DIR + File.separator + sourceName;
+        File sourceDir = new File(sourcePath);
+        if (!FileUtil.exist(sourcePath)) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "源目录不存在");
+        }
+        // 构建部署目录(../tmp/code_deploy/deployKey)
+        String deployPath = AppConstant.CODE_DEPLOY_ROOT_DIR + File.separator + deployKey;
+        // 复制文件到部署目录
+        try {
+            FileUtil.copyContent(sourceDir, new File(deployPath), true);
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "部署失败" + e.getMessage());
+        }
+        // 6.更新应用信息
+        App updateApp = new App();
+        updateApp.setId(appId);
+        updateApp.setDeployKey(deployKey);
+        updateApp.setDeployedTime(LocalDateTime.now());
+        boolean updateResult = this.updateById(updateApp);
+        if (!updateResult) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新应用信息失败");
+        }
+        // 返回可访问的URL(../tmp/code_deploy/文件名称)
+        return String.format("部署成功,访问地址: %s", AppConstant.CODE_DEPLOY_ROOT_DIR + deployKey);
+    }
+
+    @Override
+    public Flux<String> chatToGenCode(Long appId, String userMessage, User loginUser) {
+        // 1.参数校验
+        ThrowUtils.throwIf(StrUtil.isBlank(userMessage), ErrorCode.PARAMS_ERROR, "用户消息不能为空");
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID不能为空");
+        // 2.获取应用
+        App app = this.getAppById(appId);
+        if (ObjectUtil.isEmpty(app)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        }
+        // 3.仅本人可以生成代码
+        if (!app.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无操作权限访问应用");
+        }
+        // 4.获取代码生成类型
+        String codeGenType = app.getCodeGenType();
+        CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByValue(codeGenType);
+        if (codeGenTypeEnum == null) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "代码生成类型错误");
+        }
+        // 5.调用AI生成代码(流式)
+        return aiCodeGeneratorFacade.generateAndSaveCodeStream(userMessage, codeGenTypeEnum, appId);
+
+    }
+
     @Override
     public Long createApp(App app, Long userId) {
-        // 1. 校验
+        // 1. 参数校验
         if (app == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
         }
@@ -55,7 +142,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         newApp.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
         // 默认使用多文件生成
         newApp.setCodeGenType(CodeGenTypeEnum.MULTI_FILE.getValue());
-        // 创建者
+        // 应用创建者
         newApp.setUserId(userId);
         boolean saveResult = this.save(newApp);
         if (!saveResult) {
@@ -200,7 +287,6 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         long pageSize = appQueryRequest.getPageSize();
         // 限制每页最多20个
         ThrowUtils.throwIf(pageSize > 20, ErrorCode.PARAMS_ERROR, "每页最多查询 20 个应用");
-
         QueryWrapper queryWrapper = this.getQueryWrapper(appQueryRequest);
         // 只查询 priority = 99 的应用（精选）
         queryWrapper.eq("priority", AppConstant.GOOD_APP_PRIORITY);
@@ -212,9 +298,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR);
         long pageNum = appQueryRequest.getPageNum();
         long pageSize = appQueryRequest.getPageSize();
-
         QueryWrapper queryWrapper = this.getQueryWrapper(appQueryRequest);
-
         return this.page(Page.of(pageNum, pageSize), queryWrapper);
     }
 }

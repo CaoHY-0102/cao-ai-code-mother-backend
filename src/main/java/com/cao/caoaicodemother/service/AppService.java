@@ -1,11 +1,13 @@
 package com.cao.caoaicodemother.service;
 
 import com.cao.caoaicodemother.model.dto.app.AppQueryRequest;
+import com.cao.caoaicodemother.model.entity.User;
 import com.cao.caoaicodemother.model.vo.AppVO;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
 import com.cao.caoaicodemother.model.entity.App;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -15,6 +17,27 @@ import java.util.List;
  * @author 小曹同学
  */
 public interface AppService extends IService<App> {
+
+
+    /**
+     * 应用部署
+     *
+     * @param appId 应用ID
+     * @param loginUser 登录用户
+     * @return 可访问的URL
+     */
+    String deployApp(Long appId,User loginUser);
+
+
+    /**
+     * 聊天生成代码
+     *
+     * @param appId 应用ID
+     * @param userMessage 用户消息
+     * @param loginUser 登录用户
+     * @return 流式代码
+     */
+    Flux<String> chatToGenCode(Long appId, String userMessage, User loginUser);
 
     /**
      * 创建应用

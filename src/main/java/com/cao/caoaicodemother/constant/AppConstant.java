@@ -11,4 +11,19 @@ public interface AppConstant {
      * 默认应用优先级
      */
     Integer DEFAULT_APP_PRIORITY = 0;
+
+    /**
+     * 应用代码生成目录
+     */
+    String CODE_OUTPUT_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_output";
+
+    /**
+     * 应用代码部署目录
+     */
+    String CODE_DEPLOY_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_deploy";
+
+    /**
+     * 部署域名
+     */
+    String DEPLOY_DOMAIN = "http://localhost";
 }

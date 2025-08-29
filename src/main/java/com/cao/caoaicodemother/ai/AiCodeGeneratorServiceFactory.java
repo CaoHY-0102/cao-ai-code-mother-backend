@@ -21,7 +21,7 @@ public class AiCodeGeneratorServiceFactory {
     private StreamingChatModel streamingChatModel;
 
 
-    @Bean
+    @Bean("aiCodeGeneratorService")
     public AiCodeGeneratorService aiCodeGeneratorService() {
         return AiServices.builder(AiCodeGeneratorService.class)
                 .chatModel(chatModel)

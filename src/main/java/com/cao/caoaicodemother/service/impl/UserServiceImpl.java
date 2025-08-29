@@ -3,6 +3,7 @@ package com.cao.caoaicodemother.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.digest.DigestUtil;
 import com.cao.caoaicodemother.exception.BusinessException;
 import com.cao.caoaicodemother.exception.ErrorCode;
 import com.cao.caoaicodemother.model.dto.user.UserQueryRequest;
@@ -15,8 +16,8 @@ import com.cao.caoaicodemother.model.entity.User;
 import com.cao.caoaicodemother.mapper.UserMapper;
 import com.cao.caoaicodemother.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.DigestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,8 +30,9 @@ import static com.cao.caoaicodemother.constant.UserConstant.USER_LOGIN_STATE;
  *
  * @author 小曹同学
  */
+@Slf4j
 @Service
-public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements UserService{
+public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
 
     @Override
@@ -67,6 +69,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         if (!saveResult) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败，数据库错误");
         }
+        // 日志记录
+        log.info("用户注册成功，用户ID：{}", user.getId());
         return user.getId();
     }
 
@@ -82,19 +86,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         if (userPassword.length() < 8) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码错误");
         }
-        // 2. 加密
-        String encryptPassword = getEncryptPassword(userPassword);
         // 查询用户是否存在
         QueryWrapper queryWrapper = new QueryWrapper();
         queryWrapper.eq("userAccount", userAccount);
-        queryWrapper.eq("userPassword", encryptPassword);
         User user = this.mapper.selectOneByQuery(queryWrapper);
-        // 用户不存在
-        if (user == null) {
+
+        // 用户不存在或密码错误
+        if (user == null || !DigestUtil.bcryptCheck(userPassword, user.getUserPassword())) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户不存在或密码错误");
         }
         // 3. 记录用户的登录态
         request.getSession().setAttribute(USER_LOGIN_STATE, user);
+        // 日志记录
+        log.info("用户登录成功，用户ID：{}", user.getId());
         // 4. 获得脱敏后的用户信息
         return this.getLoginUserVO(user);
     }
@@ -170,8 +174,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
     @Override
     public String getEncryptPassword(String userPassword) {
         // 盐值，混淆密码
-        final String SALT = "cao";
-        return DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
+//        final String SALT = "cao";
+        return DigestUtil.bcrypt(userPassword);
     }
 
     @Override
@@ -183,6 +187,4 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         BeanUtil.copyProperties(user, loginUserVO);
         return loginUserVO;
     }
-
-
 }

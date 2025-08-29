@@ -1,6 +1,11 @@
 package com.cao.caoaicodemother.controller;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.digest.DigestUtil;
+import cn.hutool.json.JSONUtil;
+import com.cao.caoaicodemother.model.dto.app.*;
+import com.cao.caoaicodemother.utils.EncryptUtil;
 import com.cao.caoaicodemother.annotation.AuthCheck;
 import com.cao.caoaicodemother.common.BaseResponse;
 import com.cao.caoaicodemother.common.DeleteRequest;
@@ -9,10 +14,6 @@ import com.cao.caoaicodemother.constant.UserConstant;
 import com.cao.caoaicodemother.exception.BusinessException;
 import com.cao.caoaicodemother.exception.ErrorCode;
 import com.cao.caoaicodemother.exception.ThrowUtils;
-import com.cao.caoaicodemother.model.dto.app.AppAddRequest;
-import com.cao.caoaicodemother.model.dto.app.AppAdminUpdateRequest;
-import com.cao.caoaicodemother.model.dto.app.AppQueryRequest;
-import com.cao.caoaicodemother.model.dto.app.AppUpdateRequest;
 import com.cao.caoaicodemother.model.entity.App;
 import com.cao.caoaicodemother.model.entity.User;
 import com.cao.caoaicodemother.model.vo.AppVO;
@@ -21,14 +22,17 @@ import com.cao.caoaicodemother.service.UserService;
 import com.mybatisflex.core.paginate.Page;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.context.annotation.Bean;
+import org.springframework.http.MediaType;
+
+import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 应用 控制层。
@@ -44,6 +48,63 @@ public class AppController {
 
     @Resource
     private UserService userService;
+
+    /**
+     * 【用户】部署应用
+     *
+     * @param appDeployRequest 应用部署请求
+     * @param request          HTTP请求
+     * @return 部署URL
+     */
+    @PostMapping("/deploy/")
+    public BaseResponse<String> deployApp(@RequestBody AppDeployRequest appDeployRequest, HttpServletRequest request) {
+        //1.参数校验
+        Long appId = appDeployRequest.getAppId();
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID不能为空");
+        //2.获取登录用户
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+        //3.调用部署服务接口
+        String result = appService.deployApp(appId, loginUser);
+        // 4.返回部署 URL
+        return ResultUtils.success(result);
+
+    }
+
+    /**
+     * 【用户】AI生成代码
+     *
+     * @param appId   应用ID
+     * @param message 用户消息
+     * @param request HTTP请求
+     * @return 生成的代码(流式)
+     */
+    @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId, @RequestParam String message, HttpServletRequest request) {
+        //1.参数校验
+        ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "用户消息不能为空");
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID不能为空");
+        //3.调用AI生成代码
+        User loginUser = userService.getLoginUser(request);
+        Flux<String> chatToGenCode = appService.chatToGenCode(appId, message, loginUser);
+        return chatToGenCode.map(
+                        chunk -> {
+                            Map<String, String> result = Map.of("d", chunk);
+                            String data = JSONUtil.toJsonStr(result);
+                            // 对数据进行加密
+                            // String encryptedData = DigestUtil.bcrypt(data);
+                            return ServerSentEvent.<String>builder()
+                                    .data(data)
+                                    .build();
+                        })
+                .concatWith(
+                        // 结束事件
+                        Mono.just(
+                                ServerSentEvent.<String>builder()
+                                        .event("done")
+                                        .data("")
+                                        .build()));
+    }
 
     /**
      * 【用户】创建应用（须填写 initPrompt）

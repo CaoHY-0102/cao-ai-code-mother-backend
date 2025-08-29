@@ -1,8 +1,8 @@
 package com.cao.caoaicodemother.core.saver;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
+import com.cao.caoaicodemother.constant.AppConstant;
 import com.cao.caoaicodemother.model.enums.CodeGenTypeEnum;
 
 import java.io.File;
@@ -11,13 +11,18 @@ import java.nio.charset.StandardCharsets;
 public abstract class CodeFileSaverTemplate<T> {
 
     // 文件保存根目录
-    public static final String FILE_SAVE_ROOT_PATH = System.getProperty("user.dir") + "/tmp/code_output";
-
-    public final File saveCodeFile(T result) {
+    public static final String FILE_SAVE_ROOT_PATH = AppConstant.CODE_OUTPUT_ROOT_DIR;
+    /**
+     * 保存代码文件(使用appId)
+     * @param result 代码结果对象
+     * @param appId 应用ID
+     * @return 保存的目录
+     */
+    public final File saveCodeFile(T result,Long appId) {
         //1. 验证输入
         validateInput(result);
         //2. 构建唯一目录
-        String baseDirPath = buildUniqueDir();
+        String baseDirPath = buildUniqueDir(appId);
         //3. 保存文件（具体实现由子类实现）
         saveFiles(baseDirPath, result);
         //4. 返回文件对象
@@ -27,10 +32,14 @@ public abstract class CodeFileSaverTemplate<T> {
     protected abstract void validateInput(T result);
 
 
-    // 构建唯一目录路径： tmp/code_output/bizType_雪花ID
-    protected final String buildUniqueDir() {
+    /**
+     * 构建基于appId的目录
+     * @param appId 应用ID
+     * @return 目录路径
+     */
+    protected final String buildUniqueDir(Long appId) {
         String bizType = getCodeType().getValue();
-        String uniqueDirName = String.format("%s_%s", bizType, IdUtil.getSnowflakeNextId());
+        String uniqueDirName = String.format("%s_%s", bizType, appId);
         String dirPath = FILE_SAVE_ROOT_PATH + File.separator + uniqueDirName;
         FileUtil.mkdir(dirPath);
         return dirPath;

@@ -4,6 +4,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.IdUtil;
 import com.cao.caoaicodemother.ai.model.HtmlCodeResult;
 import com.cao.caoaicodemother.ai.model.MultiFileCodeResult;
+import com.cao.caoaicodemother.constant.AppConstant;
 import com.cao.caoaicodemother.model.enums.CodeGenTypeEnum;
 
 import java.io.File;
@@ -16,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 public class CodeFileSaver {
 
     // 文件保存根目录
-    public static final String FILE_SAVE_ROOT_PATH = System.getProperty("user.dir") + "/tmp/code_output";
+    public static final String FILE_SAVE_ROOT_PATH = AppConstant.CODE_OUTPUT_ROOT_DIR;
 
     // 保存HTML代码文件
     public static File saveHtmlCodeFile(HtmlCodeResult result) {
