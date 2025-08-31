@@ -2,11 +2,13 @@
 /* eslint-disable */
 // API 更新时间：
 // API 唯一标识：
-import * as userController from './userController'
-import * as healthController from './healthController'
-import * as aiCodeGeneratorController from './aiCodeGeneratorController'
+import * as yonghuxinxi from './userController.ts'
+import * as yingyongxinxi from './appController.ts'
+import * as jingtaiziyuan from './jingtaiziyuan'
+import * as jiankangjiancha from './jiankangjiancha'
 export default {
-  userController,
-  healthController,
-  aiCodeGeneratorController,
+  yonghuxinxi,
+  yingyongxinxi,
+  jingtaiziyuan,
+  jiankangjiancha,
 }

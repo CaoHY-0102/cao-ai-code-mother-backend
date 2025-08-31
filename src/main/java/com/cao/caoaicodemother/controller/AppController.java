@@ -135,7 +135,7 @@ public class AppController {
      */
     @Operation(summary = "修改应用")
     @PostMapping("/update")
-    public BaseResponse<Boolean> updateMyApp(@RequestBody AppUpdateRequest appUpdateRequest, HttpServletRequest request) {
+    public BaseResponse<Boolean> updateApp(@RequestBody AppUpdateRequest appUpdateRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(appUpdateRequest == null || appUpdateRequest.getId() == null, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
         App app = new App();
@@ -153,7 +153,7 @@ public class AppController {
      */
     @Operation(summary = "删除应用")
     @PostMapping("/delete")
-    public BaseResponse<Boolean> deleteMyApp(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
+    public BaseResponse<Boolean> deleteApp(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(deleteRequest == null || deleteRequest.getId() == null, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
         boolean result = appService.deleteApp(deleteRequest.getId(), loginUser.getId());
@@ -168,7 +168,7 @@ public class AppController {
      */
     @Operation(summary = "获取应用")
     @GetMapping("/get/vo")
-    public BaseResponse<AppVO> getMyAppById(Long id, HttpServletRequest request) {
+    public BaseResponse<AppVO> getAppVOById(Long id, HttpServletRequest request) {
         ThrowUtils.throwIf(id == null || id <= 0, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
         App app = appService.getAppById(id);
@@ -188,7 +188,7 @@ public class AppController {
      */
     @Operation(summary = "获取应用列表")
     @PostMapping("/my/list/page/vo")
-    public BaseResponse<Page<AppVO>> listMyAppByPage(@RequestBody AppQueryRequest appQueryRequest, HttpServletRequest request) {
+    public BaseResponse<Page<AppVO>> listMyAppVOByPage(@RequestBody AppQueryRequest appQueryRequest, HttpServletRequest request) {
         // 参数校验
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR);
         // 获取当前登录用户
@@ -211,7 +211,7 @@ public class AppController {
      */
     @Operation(summary = "获取精选应用列表")
     @PostMapping("/good/list/page/vo")
-    public BaseResponse<Page<AppVO>> listGoodAppByPage(@RequestBody AppQueryRequest appQueryRequest) {
+    public BaseResponse<Page<AppVO>> listGoodAppVOByPage(@RequestBody AppQueryRequest appQueryRequest) {
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR);
         Page<App> appPage = appService.listGoodAppByPage(appQueryRequest);
         // 数据脱敏
@@ -272,7 +272,7 @@ public class AppController {
     @Operation(summary = "获取应用列表(管理员)")
     @PostMapping("/admin/list/page/vo")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Page<AppVO>> listAppByPageByAdmin(@RequestBody AppQueryRequest appQueryRequest) {
+    public BaseResponse<Page<AppVO>> listAppVOByPageByAdmin(@RequestBody AppQueryRequest appQueryRequest) {
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR);
         Page<App> appPage = appService.listAppByPage(appQueryRequest);
         // 数据脱敏

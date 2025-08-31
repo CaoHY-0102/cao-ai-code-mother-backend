@@ -2,11 +2,11 @@
   <a-layout-header class="header">
     <a-row :wrap="false">
       <!-- 左侧：Logo和标题 -->
-      <a-col flex="aoto">
+      <a-col flex="200px">
         <RouterLink to="/">
           <div class="header-left">
             <img class="logo" src="@/assets/logo.png" alt="Logo" />
-            <h1 class="site-title">鱼哒哒AI应用生成</h1>
+            <h1 class="site-title">AI应用生成</h1>
           </div>
         </RouterLink>
       </a-col>
@@ -53,10 +53,9 @@ import { useRouter } from 'vue-router'
 import { type MenuProps, message } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/loginUser.ts'
 import { userLogout } from '@/api/userController.ts'
-import { HomeOutlined, LogoutOutlined } from '@ant-design/icons-vue'
+import { LogoutOutlined, HomeOutlined } from '@ant-design/icons-vue'
 
 const loginUserStore = useLoginUserStore()
-
 const router = useRouter()
 // 当前选中菜单
 const selectedKeys = ref<string[]>(['/'])
@@ -74,20 +73,15 @@ const originItems = [
     title: '主页',
   },
   {
-    key: '/ai/code/generator',
-    label: 'AI代码生成',
-    title: 'AI代码生成',
-  },
-  {
     key: '/admin/userManage',
     label: '用户管理',
     title: '用户管理',
   },
   {
-    key: 'others',
-    label: h('a', { href: 'https://www.codefather.cn', target: '_blank' }, '编程导航'),
-    title: '编程导航',
-  },
+    key: '/admin/appManage',
+    label: '应用管理',
+    title: '应用管理',
+  }
 ]
 
 // 过滤菜单项
@@ -117,6 +111,7 @@ const handleMenuClick: MenuProps['onClick'] = (e) => {
   }
 }
 
+// 退出登录
 const doLogout = async () => {
   const res = await userLogout()
   if (res.data.code === 0) {
