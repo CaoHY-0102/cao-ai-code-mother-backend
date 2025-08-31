@@ -13,6 +13,8 @@ import com.cao.caoaicodemother.model.dto.user.*;
 import com.cao.caoaicodemother.model.vo.LoginUserVO;
 import com.cao.caoaicodemother.model.vo.UserVO;
 import com.mybatisflex.core.paginate.Page;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,6 +32,7 @@ import java.util.List;
  *
  * @author 小曹同学
  */
+@Tag(name = "用户信息")
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -43,6 +46,7 @@ public class UserController {
      * @param userRegisterRequest 用户注册请求
      * @return 注册结果
      */
+    @Operation(summary = "用户注册")
     @PostMapping("register")
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         ThrowUtils.throwIf(userRegisterRequest == null, ErrorCode.PARAMS_ERROR);
@@ -53,6 +57,13 @@ public class UserController {
         return ResultUtils.success(result);
     }
 
+    /**
+     * 用户登录
+     *
+     * @param userLoginRequest 用户登录请求
+     * @return 登录结果
+     */
+    @Operation(summary = "用户登录")
     @PostMapping("/login")
     public BaseResponse<LoginUserVO> userLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(userLoginRequest == null, ErrorCode.PARAMS_ERROR);
@@ -62,12 +73,20 @@ public class UserController {
         return ResultUtils.success(loginUserVO);
     }
 
+    /**
+     * 获取当前登录用户
+     */
+    @Operation(summary = "获取当前登录用户")
     @GetMapping("/get/login")
     public BaseResponse<LoginUserVO> getLoginUser(HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         return ResultUtils.success(userService.getLoginUserVO(loginUser));
     }
 
+    /**
+     * 用户注销
+     */
+    @Operation(summary = "用户注销")
     @PostMapping("/logout")
     public BaseResponse<Boolean> userLogout(HttpServletRequest request) {
         ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
@@ -78,6 +97,7 @@ public class UserController {
     /**
      * 创建用户
      */
+    @Operation(summary = "创建用户(管理员)")
     @PostMapping("/add")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Long> addUser(@RequestBody UserAddRequest userAddRequest) {
@@ -96,6 +116,7 @@ public class UserController {
     /**
      * 根据 id 获取用户（仅管理员）
      */
+    @Operation(summary = "根据 id 获取用户(管理员)")
     @GetMapping("/get")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<User> getUserById(long id) {
@@ -108,6 +129,7 @@ public class UserController {
     /**
      * 根据 id 获取包装类
      */
+    @Operation(summary = "根据 id 获取包装类")
     @GetMapping("/get/vo")
     public BaseResponse<UserVO> getUserVOById(long id) {
         BaseResponse<User> response = getUserById(id);
@@ -118,6 +140,7 @@ public class UserController {
     /**
      * 删除用户
      */
+    @Operation(summary = "删除用户(管理员)")
     @PostMapping("/delete")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest) {
@@ -131,6 +154,7 @@ public class UserController {
     /**
      * 更新用户
      */
+    @Operation(summary = "更新用户(管理员)")
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
@@ -149,6 +173,7 @@ public class UserController {
      *
      * @param userQueryRequest 查询请求参数
      */
+    @Operation(summary = "分页获取用户封装列表(管理员)")
     @PostMapping("/list/page/vo")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Page<UserVO>> listUserVOByPage(@RequestBody UserQueryRequest userQueryRequest) {

@@ -1,3 +1,7 @@
+server:
+  port: 8123
+  servlet:
+    context-path: /api
 spring:
   application:
     name: cao-ai-code-mother-backend
@@ -8,19 +12,31 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/yu_ai_code_mother
     username: root
-    password: 123456
+    password: cao66!
 
-server:
-  port: 8123
-  servlet:
-    context-path: /api
-# springdoc-openapi
-springdoc:
-  group-configs:
-    - group: 'default'
-      packages-to-scan: com.cao.caoaicodemother.controller
 # knife4j
 knife4j:
   enable: true
+  openapi:
+    title: "AI代码生成平台接口文档"  # 文档标题
+    description: "这是AI代码生成平台的API接口文档，包含所有可用接口的详细说明"  # 文档描述
+    version: "v1.0.0"  # 文档版本号
+    contact:
+      name: "小曹同学"  # 联系人
+      email: "caochenxu66@gmail.com"  # 联系邮箱
+    license:
+      name: "Apache 2.0"  # 许可证名称
+      url: "https://www.apache.org/licenses/LICENSE-2.0"  # 许可证地址
   setting:
-    language: zh_cn
+    language: zh_cn  # 界面语言（zh_cn 中文，en 英文）
+    enable-swagger-models: true  # 是否显示模型列表
+    swagger-model-name: "数据模型"  # 模型列表标题
+    enable-document-manage: true  # 是否启用文档管理
+  documents:
+    - name: "接口使用指南"  # 自定义文档名称
+      group: "文档说明"  # 文档分组
+      locations: classpath:markdown/guide/*  # 文档存放路径
+  basic:
+    enable: true  # 是否启用基础认证
+    username: admin  # 认证用户名
+    password: 123456  # 认证密码

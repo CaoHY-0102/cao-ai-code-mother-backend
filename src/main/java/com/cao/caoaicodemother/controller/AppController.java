@@ -2,10 +2,8 @@ package com.cao.caoaicodemother.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.crypto.digest.DigestUtil;
 import cn.hutool.json.JSONUtil;
 import com.cao.caoaicodemother.model.dto.app.*;
-import com.cao.caoaicodemother.utils.EncryptUtil;
 import com.cao.caoaicodemother.annotation.AuthCheck;
 import com.cao.caoaicodemother.common.BaseResponse;
 import com.cao.caoaicodemother.common.DeleteRequest;
@@ -20,9 +18,10 @@ import com.cao.caoaicodemother.model.vo.AppVO;
 import com.cao.caoaicodemother.service.AppService;
 import com.cao.caoaicodemother.service.UserService;
 import com.mybatisflex.core.paginate.Page;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 
 import org.springframework.http.codec.ServerSentEvent;
@@ -40,6 +39,7 @@ import java.util.Map;
  * @author 小曹同学
  */
 @RestController
+@Tag(name = "应用信息")
 @RequestMapping("/app")
 public class AppController {
 
@@ -56,7 +56,8 @@ public class AppController {
      * @param request          HTTP请求
      * @return 部署URL
      */
-    @PostMapping("/deploy/")
+    @Operation(summary = "部署应用")
+    @PostMapping("/deploy")
     public BaseResponse<String> deployApp(@RequestBody AppDeployRequest appDeployRequest, HttpServletRequest request) {
         //1.参数校验
         Long appId = appDeployRequest.getAppId();
@@ -79,6 +80,7 @@ public class AppController {
      * @param request HTTP请求
      * @return 生成的代码(流式)
      */
+    @Operation(summary = "AI生成代码")
     @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId, @RequestParam String message, HttpServletRequest request) {
         //1.参数校验
@@ -113,6 +115,7 @@ public class AppController {
      * @param request       HTTP请求
      * @return 应用ID
      */
+    @Operation(summary = "创建应用")
     @PostMapping("/add")
     public BaseResponse<Long> addApp(@RequestBody AppAddRequest appAddRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(appAddRequest == null, ErrorCode.PARAMS_ERROR);
@@ -130,6 +133,7 @@ public class AppController {
      * @param request          HTTP请求
      * @return 是否成功
      */
+    @Operation(summary = "修改应用")
     @PostMapping("/update")
     public BaseResponse<Boolean> updateMyApp(@RequestBody AppUpdateRequest appUpdateRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(appUpdateRequest == null || appUpdateRequest.getId() == null, ErrorCode.PARAMS_ERROR);
@@ -147,6 +151,7 @@ public class AppController {
      * @param request       HTTP请求
      * @return 是否成功
      */
+    @Operation(summary = "删除应用")
     @PostMapping("/delete")
     public BaseResponse<Boolean> deleteMyApp(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(deleteRequest == null || deleteRequest.getId() == null, ErrorCode.PARAMS_ERROR);
@@ -161,6 +166,7 @@ public class AppController {
      * @param id 应用ID
      * @return 应用详情
      */
+    @Operation(summary = "获取应用")
     @GetMapping("/get/vo")
     public BaseResponse<AppVO> getMyAppById(Long id, HttpServletRequest request) {
         ThrowUtils.throwIf(id == null || id <= 0, ErrorCode.PARAMS_ERROR);
@@ -180,6 +186,7 @@ public class AppController {
      * @param request         HTTP请求
      * @return 分页结果
      */
+    @Operation(summary = "获取应用列表")
     @PostMapping("/my/list/page/vo")
     public BaseResponse<Page<AppVO>> listMyAppByPage(@RequestBody AppQueryRequest appQueryRequest, HttpServletRequest request) {
         // 参数校验
@@ -202,6 +209,7 @@ public class AppController {
      * @param appQueryRequest 查询请求
      * @return 分页结果
      */
+    @Operation(summary = "获取精选应用列表")
     @PostMapping("/good/list/page/vo")
     public BaseResponse<Page<AppVO>> listGoodAppByPage(@RequestBody AppQueryRequest appQueryRequest) {
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR);
@@ -219,6 +227,7 @@ public class AppController {
      * @param deleteRequest 删除请求
      * @return 是否成功
      */
+    @Operation(summary = "删除应用(管理员)")
     @PostMapping("/admin/delete")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> deleteAppByAdmin(@RequestBody DeleteRequest deleteRequest) {
@@ -237,6 +246,7 @@ public class AppController {
      * @param appAdminUpdateRequest 应用更新请求
      * @return 是否成功
      */
+    @Operation(summary = "更新应用(管理员)")
     @PostMapping("/admin/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> updateAppByAdmin(@RequestBody AppAdminUpdateRequest appAdminUpdateRequest) {
@@ -259,6 +269,7 @@ public class AppController {
      * @param appQueryRequest 查询请求
      * @return 分页结果
      */
+    @Operation(summary = "获取应用列表(管理员)")
     @PostMapping("/admin/list/page/vo")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Page<AppVO>> listAppByPageByAdmin(@RequestBody AppQueryRequest appQueryRequest) {
@@ -277,6 +288,7 @@ public class AppController {
      * @param id 应用ID
      * @return 应用详情
      */
+    @Operation(summary = "获取应用详情(管理员)")
     @GetMapping("/admin/get/vo")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<AppVO> getAppVOByIdByAdmin(Long id) {

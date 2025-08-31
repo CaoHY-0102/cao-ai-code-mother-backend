@@ -98,8 +98,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (!updateResult) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新应用信息失败");
         }
-        // 返回可访问的URL(../tmp/code_deploy/文件名称)
-        return String.format("部署成功,访问地址: %s", AppConstant.CODE_DEPLOY_ROOT_DIR + deployKey);
+        // 返回可访问的URL(http://localhost/deployKey/)
+        return String.format("部署成功,访问地址: %s/%s/", AppConstant.DEPLOY_DOMAIN, deployKey);
     }
 
     @Override
