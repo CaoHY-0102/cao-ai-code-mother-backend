@@ -20,23 +20,55 @@
       :pagination="pagination"
       @change="doTableChange"
     >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.dataIndex === 'userAvatar'">
-          <a-image :src="record.userAvatar" :width="120" />
+      <template #bodyCell="{ column, record, index }">
+        <template v-if="column.dataIndex === 'userName'">
+          <div v-if="editingKey === record.id">
+            <a-input v-model:value="record.userName" />
+          </div>
+          <span v-else>{{ record.userName }}</span>
+        </template>
+        <template v-else-if="column.dataIndex === 'userAvatar'">
+          <div v-if="editingKey === record.id">
+            <a-input v-model:value="record.userAvatar" />
+          </div>
+          <span v-else>
+            <a-image :src="record.userAvatar" :width="120" />
+          </span>
+        </template>
+        <template v-else-if="column.dataIndex === 'userProfile'">
+          <div v-if="editingKey === record.id">
+            <a-input v-model:value="record.userProfile" />
+          </div>
+          <span v-else>{{ record.userProfile }}</span>
         </template>
         <template v-else-if="column.dataIndex === 'userRole'">
-          <div v-if="record.userRole === 'admin'">
-            <a-tag color="green">管理员</a-tag>
+          <div v-if="editingKey === record.id">
+            <ASelect v-model:value="record.userRole" style="width: 120px">
+              <ASelectOption value="user">普通用户</ASelectOption>
+              <ASelectOption value="admin">管理员</ASelectOption>
+            </ASelect>
           </div>
           <div v-else>
-            <a-tag color="blue">普通用户</a-tag>
+            <div v-if="record.userRole === 'admin'">
+              <a-tag color="green">管理员</a-tag>
+            </div>
+            <div v-else>
+              <a-tag color="blue">普通用户</a-tag>
+            </div>
           </div>
         </template>
         <template v-else-if="column.dataIndex === 'createTime'">
           {{ dayjs(record.createTime).format('YYYY-MM-DD HH:mm:ss') }}
         </template>
         <template v-else-if="column.key === 'action'">
-          <a-button danger @click="doDelete(record.id)">删除</a-button>
+          <div v-if="editingKey === record.id">
+            <a-button type="primary" @click="save(record)">保存</a-button>
+            <a-button style="margin-left: 8px" @click="cancel(record, index)">取消</a-button>
+          </div>
+          <div v-else>
+            <a-button type="primary" @click="edit(record)">编辑</a-button>
+            <a-button danger style="margin-left: 8px" @click="doDelete(record.id)">删除</a-button>
+          </div>
         </template>
       </template>
     </a-table>
@@ -44,9 +76,12 @@
 </template>
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { deleteUser, listUserVoByPage } from '@/api/userController.ts'
-import { message } from 'ant-design-vue'
+import { deleteUser, listUserVoByPage, updateUser } from '@/api/userController.ts'
+import { message, Select } from 'ant-design-vue'
 import dayjs from 'dayjs'
+
+const ASelect = Select
+const ASelectOption = Select.Option
 
 const columns = [
   {
@@ -92,6 +127,10 @@ const searchParams = reactive<API.UserQueryRequest>({
   pageNum: 1,
   pageSize: 10,
 })
+
+// 编辑状态
+const editingKey = ref('')
+const editingRecord = ref<API.UserVO | null>(null)
 
 // 获取数据
 const fetchData = async () => {
@@ -144,6 +183,47 @@ const doDelete = async (id: string) => {
   } else {
     message.error('删除失败')
   }
+}
+
+// 编辑数据
+const edit = (record: API.UserVO) => {
+  editingKey.value = record.id as string
+  // 保存编辑前的数据，用于取消时恢复
+  editingRecord.value = JSON.parse(JSON.stringify(record))
+}
+
+// 保存数据
+const save = async (record: API.UserVO) => {
+  try {
+    const res = await updateUser({
+      id: record.id,
+      userName: record.userName,
+      userAvatar: record.userAvatar,
+      userProfile: record.userProfile,
+      userRole: record.userRole,
+    })
+    if (res.data.code === 0) {
+      message.success('保存成功')
+      editingKey.value = ''
+      editingRecord.value = null
+      // 刷新数据
+      fetchData()
+    } else {
+      message.error('保存失败: ' + res.data.message)
+    }
+  } catch (error) {
+    message.error('保存失败: ' + error)
+  }
+}
+
+// 取消编辑
+const cancel = (record: API.UserVO, index: number) => {
+  editingKey.value = ''
+  // 恢复编辑前的数据
+  if (editingRecord.value) {
+    data.value[index] = editingRecord.value
+  }
+  editingRecord.value = null
 }
 
 // 页面加载时请求一次
