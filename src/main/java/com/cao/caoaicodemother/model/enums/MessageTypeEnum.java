@@ -5,19 +5,19 @@ import lombok.Getter;
 
 /**
  * @author cao
- * @description 代码生成类型枚举
- * @date 2023/9/27 14:05
+ * @description: 消息类型枚举
+ * @date 2025/9/1 （根据实际生成日期修改）
  */
 @Getter
-public enum CodeGenTypeEnum {
+public enum MessageTypeEnum {
 
-    HTML("原生 HTML 模式", "html"),
-    MULTI_FILE("原生多文件模式", "multi_file");
+    USER("用户消息", "user"),
+    AI("AI消息", "ai");
 
     private final String text;
     private final String value;
 
-    CodeGenTypeEnum(String text, String value) {
+    MessageTypeEnum(String text, String value) {
         this.text = text;
         this.value = value;
     }
@@ -28,11 +28,11 @@ public enum CodeGenTypeEnum {
      * @param value 枚举值的value
      * @return 枚举值
      */
-    public static CodeGenTypeEnum getEnumByValue(String value) {
+    public static MessageTypeEnum getEnumByValue(String value) {
         if (ObjUtil.isEmpty(value)) {
             return null;
         }
-        for (CodeGenTypeEnum anEnum : CodeGenTypeEnum.values()) {
+        for (MessageTypeEnum anEnum : MessageTypeEnum.values()) {
             if (anEnum.value.equals(value)) {
                 return anEnum;
             }

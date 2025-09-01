@@ -17,14 +17,17 @@ import com.cao.caoaicodemother.model.dto.app.AppQueryRequest;
 import com.cao.caoaicodemother.model.entity.App;
 import com.cao.caoaicodemother.model.entity.User;
 import com.cao.caoaicodemother.model.enums.CodeGenTypeEnum;
+import com.cao.caoaicodemother.model.enums.MessageTypeEnum;
 import com.cao.caoaicodemother.model.vo.AppVO;
 import com.cao.caoaicodemother.model.vo.UserVO;
 import com.cao.caoaicodemother.service.AppService;
+import com.cao.caoaicodemother.service.ChatHistoryService;
 import com.cao.caoaicodemother.service.UserService;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -40,6 +43,7 @@ import java.util.stream.Collectors;
  *
  * @author 小曹同学
  */
+@Slf4j
 @Service
 public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppService {
 
@@ -48,6 +52,25 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Resource
     private AiCodeGeneratorFacade aiCodeGeneratorFacade;
+
+    @Resource
+    private ChatHistoryService chatHistoryService;
+
+    @Override
+    public boolean deleteChatMessageAndAppById(Long id) {
+        // 1. 参数校验
+        if (id == null) {
+            return false;
+        }
+        // 2. 删除对话聊天记录
+        try {
+            chatHistoryService.deleteChatMessageByAppId(id);
+        } catch (Exception e) {
+            log.error("删除对话聊天记录失败: {}", e.getMessage());
+        }
+        // 3. 删除应用
+        return this.removeById(id);
+    }
 
     @Override
     public String deployApp(Long appId, User loginUser) {
@@ -112,8 +135,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (ObjectUtil.isEmpty(app)) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "应用不存在");
         }
+        Long userId = loginUser.getId();
         // 3.仅本人可以生成代码
-        if (!app.getUserId().equals(loginUser.getId())) {
+        if (!app.getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无操作权限访问应用");
         }
         // 4.获取代码生成类型
@@ -122,9 +146,29 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (codeGenTypeEnum == null) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "代码生成类型错误");
         }
-        // 5.调用AI生成代码(流式)
-        return aiCodeGeneratorFacade.generateAndSaveCodeStream(userMessage, codeGenTypeEnum, appId);
-
+        // 5.将用户消息添加到对话历史
+        chatHistoryService.addChatMessage(appId, userId, userMessage, MessageTypeEnum.USER.getValue());
+        // 6.调用AI生成代码(流式)
+        Flux<String> contentFlux = aiCodeGeneratorFacade.generateAndSaveCodeStream(userMessage, codeGenTypeEnum, appId);
+        StringBuffer codeBuilder = new StringBuffer();
+        return contentFlux
+                .doOnNext(chunk -> {
+                    // 实时收集代码片段
+                    codeBuilder.append(chunk);
+                })
+                .doOnComplete(() -> {
+                    // 流式返回完成后保存代码
+                    String aiResponseMessage = codeBuilder.toString();
+                    if (StrUtil.isNotBlank(aiResponseMessage)) {
+                        // 将 ai 消息添加到对话历史
+                        chatHistoryService.addChatMessage(appId, userId, aiResponseMessage, MessageTypeEnum.AI.getValue());
+                    }
+                })
+                .doOnError(error -> {
+                    // 如果 ai 回复错误，也保存错误信息
+                    String errorAiResponseMessage = "AI回复失败: " + error.getMessage();
+                    chatHistoryService.addChatMessage(appId, userId, errorAiResponseMessage, MessageTypeEnum.AI.getValue());
+                });
     }
 
     @Override

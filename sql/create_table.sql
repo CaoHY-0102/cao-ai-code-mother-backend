@@ -1,7 +1,4 @@
 # 数据库初始化
-# @author <a href="https://github.com/liyupi">程序员鱼皮</a>
-# @from <a href="https://codefather.cn">编程导航学习圈</a>
-
 -- 创建库
 create database if not exists yu_ai_code_mother;
 
@@ -48,3 +45,20 @@ create table if not exists app
     INDEX idx_userId (userId),
     unique key uk_deployKey (deployKey)
 ) comment '应用' collate = utf8mb4_unicode_ci;
+
+
+-- 历史对话表
+create table if not exists chat_history
+(
+    id          bigint auto_increment comment 'id' primary key,
+    message     text                               null comment '对话内容',
+    messageType varchar(32)                        null comment 'user/ai',
+    appId       bigint                             null comment '应用id',
+    userId      bigint                             null comment '用户id',
+    createTime  datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    updateTime  datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    isDelete    tinyint  default 0                 not null comment '是否删除',
+    INDEX idx_appId (appId),  -- 应用id索引的查询
+    INDEX idx_createTime (createTime),  -- 基于时间的查询
+    INDEX idx_appId_createTime (appId, createTime) -- 游标查询核心索引
+) comment '历史对话' collate = utf8mb4_unicode_ci;
