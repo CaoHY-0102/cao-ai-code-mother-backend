@@ -236,7 +236,7 @@ public class AppController {
         App oldApp = appService.getById(id);
         ThrowUtils.throwIf(oldApp == null, ErrorCode.NOT_FOUND_ERROR);
         // 根据实体主键删除
-        boolean result = appService.removeById(oldApp);
+        boolean result = appService.deleteApp(id, oldApp.getUserId());
         return ResultUtils.success(result);
     }
 

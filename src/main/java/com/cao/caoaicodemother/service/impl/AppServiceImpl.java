@@ -57,22 +57,6 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     private ChatHistoryService chatHistoryService;
 
     @Override
-    public boolean deleteChatMessageAndAppById(Long id) {
-        // 1. 参数校验
-        if (id == null) {
-            return false;
-        }
-        // 2. 删除对话聊天记录
-        try {
-            chatHistoryService.deleteChatMessageByAppId(id);
-        } catch (Exception e) {
-            log.error("删除对话聊天记录失败: {}", e.getMessage());
-        }
-        // 3. 删除应用
-        return this.removeById(id);
-    }
-
-    @Override
     public String deployApp(Long appId, User loginUser) {
         // 1.参数校验
         ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID不能为空");
@@ -147,7 +131,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "代码生成类型错误");
         }
         // 5.将用户消息添加到对话历史
-        chatHistoryService.addChatMessage(appId, userId, userMessage, MessageTypeEnum.USER.getValue());
+        chatHistoryService.addChatHistory(appId, userId, userMessage, MessageTypeEnum.USER.getValue());
         // 6.调用AI生成代码(流式)
         Flux<String> contentFlux = aiCodeGeneratorFacade.generateAndSaveCodeStream(userMessage, codeGenTypeEnum, appId);
         StringBuffer codeBuilder = new StringBuffer();
@@ -161,13 +145,13 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
                     String aiResponseMessage = codeBuilder.toString();
                     if (StrUtil.isNotBlank(aiResponseMessage)) {
                         // 将 ai 消息添加到对话历史
-                        chatHistoryService.addChatMessage(appId, userId, aiResponseMessage, MessageTypeEnum.AI.getValue());
+                        chatHistoryService.addChatHistory(appId, userId, aiResponseMessage, MessageTypeEnum.AI.getValue());
                     }
                 })
                 .doOnError(error -> {
                     // 如果 ai 回复错误，也保存错误信息
                     String errorAiResponseMessage = "AI回复失败: " + error.getMessage();
-                    chatHistoryService.addChatMessage(appId, userId, errorAiResponseMessage, MessageTypeEnum.AI.getValue());
+                    chatHistoryService.addChatHistory(appId, userId, errorAiResponseMessage, MessageTypeEnum.AI.getValue());
                 });
     }
 
@@ -234,6 +218,14 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (!app.getUserId().equals(userId) && !UserConstant.ADMIN_ROLE.equals(loginUser.getUserRole())) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无操作权限");
         }
+        // 应用删除时，关联删除应用对应的对话历史记录
+        try {
+            chatHistoryService.deleteByAppId(id);
+        } catch (Exception e) {
+            // 记录日志，但不阻止应用删除
+            log.error("删除应用时，关联删除应用对应的对话历史记录失败: {}", e.getMessage());
+        }
+        // 删除应用
         return this.removeById(id);
     }
 
@@ -345,4 +337,5 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         QueryWrapper queryWrapper = this.getQueryWrapper(appQueryRequest);
         return this.page(Page.of(pageNum, pageSize), queryWrapper);
     }
+
 }

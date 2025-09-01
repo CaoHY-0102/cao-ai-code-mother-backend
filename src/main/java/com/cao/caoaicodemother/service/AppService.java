@@ -19,13 +19,6 @@ import java.util.List;
 public interface AppService extends IService<App> {
 
     /**
-     * 删除应用和聊天记录
-     *
-     * @param id 应用ID
-     * @return 是否成功
-     */
-    boolean deleteChatMessageAndAppById(Long id);
-    /**
      * 应用部署
      *
      * @param appId 应用ID
