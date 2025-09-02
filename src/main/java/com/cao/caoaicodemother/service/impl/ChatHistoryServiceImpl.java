@@ -33,7 +33,6 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID不能为空");
         ThrowUtils.throwIf(pageSize <= 0 || pageSize > 50, ErrorCode.PARAMS_ERROR, "分页大小不能超过50");
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR, "用户未登录");
-        ThrowUtils.throwIf(lastCreateTime == null, ErrorCode.PARAMS_ERROR, "游标时间不能为空");
 
         // 2. 校验权限
         // 只有应用创建者和管理员才能查看
