@@ -2,17 +2,28 @@ server:
   port: 8123
   servlet:
     context-path: /api
+    session:
+      cookie:
+        max-age: 2592000
 spring:
   application:
     name: cao-ai-code-mother-backend
   profiles:
     active: local
+  session:
+    store-type: redis
+    timeout: 2592000 # 30天过期
   # mysql
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/yu_ai_code_mother
     username: root
     password: cao66!
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      ttl: 3600  # redis缓存时间，单位秒，默认1小时
 
 # knife4j
 knife4j:
