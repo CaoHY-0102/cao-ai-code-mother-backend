@@ -9,6 +9,8 @@ import cn.hutool.core.util.StrUtil;
 import com.cao.caoaicodemother.constant.AppConstant;
 import com.cao.caoaicodemother.constant.UserConstant;
 import com.cao.caoaicodemother.core.AiCodeGeneratorFacade;
+import com.cao.caoaicodemother.core.builder.VueProjectBuilder;
+import com.cao.caoaicodemother.core.handler.StreamHandlerExecutor;
 import com.cao.caoaicodemother.exception.BusinessException;
 import com.cao.caoaicodemother.exception.ErrorCode;
 import com.cao.caoaicodemother.exception.ThrowUtils;
@@ -56,6 +58,12 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Resource
     private ChatHistoryService chatHistoryService;
 
+    @Resource
+    private StreamHandlerExecutor streamHandlerExecutor;
+
+    @Resource
+    private VueProjectBuilder vueProjectBuilder;
+
     @Override
     public String deployApp(Long appId, User loginUser) {
         // 1.参数校验
@@ -83,10 +91,22 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         // 5.部署操作,将code_output目录下的临时文件移动到code_deployKey目录下
         // 构建源目录(../tmp/code_output/multi_file_appId)
         String sourceName = codeGenTypeEnum.getValue() + "_" + appId;
-        String sourcePath = AppConstant.CODE_OUTPUT_ROOT_DIR + File.separator + sourceName;
-        File sourceDir = new File(sourcePath);
-        if (!FileUtil.exist(sourcePath)) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "源目录不存在");
+        String sourceDirPath = AppConstant.CODE_OUTPUT_ROOT_DIR + File.separator + sourceName;
+        File sourceDir = new File(sourceDirPath);
+        if (!FileUtil.exist(sourceDir)) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "应用代码不存在");
+        }
+        // 7. Vue 项目特殊处理：执行构建
+        if (codeGenTypeEnum == CodeGenTypeEnum.VUE_PROJECT) {
+            // Vue 项目需要构建
+            boolean buildSuccess = vueProjectBuilder.buildProject(sourceDirPath);
+            ThrowUtils.throwIf(!buildSuccess, ErrorCode.SYSTEM_ERROR, "Vue 项目构建失败，请检查代码和依赖");
+            // 检查 dist 目录是否存在
+            File distDir = new File(sourceDirPath, "dist");
+            ThrowUtils.throwIf(!distDir.exists(), ErrorCode.SYSTEM_ERROR, "Vue 项目构建完成但未生成 dist 目录");
+            // 将 dist 目录作为部署源
+            sourceDir = distDir;
+            log.info("Vue 项目构建成功，将部署 dist 目录: {}", distDir.getAbsolutePath());
         }
         // 构建部署目录(../tmp/code_deploy/deployKey)
         String deployPath = AppConstant.CODE_DEPLOY_ROOT_DIR + File.separator + deployKey;
@@ -133,26 +153,10 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         // 5.将用户消息添加到对话历史
         chatHistoryService.addChatHistory(appId, userId, userMessage, MessageTypeEnum.USER.getValue());
         // 6.调用AI生成代码(流式)
-        Flux<String> contentFlux = aiCodeGeneratorFacade.generateAndSaveCodeStream(userMessage, codeGenTypeEnum, appId);
-        StringBuffer codeBuilder = new StringBuffer();
-        return contentFlux
-                .doOnNext(chunk -> {
-                    // 实时收集代码片段
-                    codeBuilder.append(chunk);
-                })
-                .doOnComplete(() -> {
-                    // 流式返回完成后保存代码
-                    String aiResponseMessage = codeBuilder.toString();
-                    if (StrUtil.isNotBlank(aiResponseMessage)) {
-                        // 将 ai 消息添加到对话历史
-                        chatHistoryService.addChatHistory(appId, userId, aiResponseMessage, MessageTypeEnum.AI.getValue());
-                    }
-                })
-                .doOnError(error -> {
-                    // 如果 ai 回复错误，也保存错误信息
-                    String errorAiResponseMessage = "AI回复失败: " + error.getMessage();
-                    chatHistoryService.addChatHistory(appId, userId, errorAiResponseMessage, MessageTypeEnum.AI.getValue());
-                });
+        Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(userMessage, codeGenTypeEnum, appId);
+        // 7.收集 AI 响应内容并在完成后保存到对话历史
+        return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum);
+
     }
 
     @Override
@@ -168,8 +172,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         newApp.setInitPrompt(initPrompt);
         // 应用名称暂时取提示词前 12 位
         newApp.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
-        // 默认使用多文件生成
-        newApp.setCodeGenType(CodeGenTypeEnum.MULTI_FILE.getValue());
+        // 默认使用 vue 工程生成
+        newApp.setCodeGenType(CodeGenTypeEnum.VUE_PROJECT.getValue());
         // 应用创建者
         newApp.setUserId(userId);
         boolean saveResult = this.save(newApp);
