@@ -1,5 +1,7 @@
 package com.cao.caoaicodemother.model.vo;
 
+import com.cao.caoaicodemother.model.entity.LarkUserInfo;
+import com.mybatisflex.annotation.Column;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -38,6 +40,10 @@ public class LoginUserVO implements Serializable {
      */
     private String userRole;
 
+    /**
+     * 飞书用户统一ID
+     */
+    private LarkUserInfoVO larkUserInfoVO;
     /**
      * 创建时间
      */

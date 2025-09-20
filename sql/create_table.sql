@@ -24,6 +24,13 @@ create table if not exists user
     UNIQUE KEY uk_userAccount (userAccount),
     INDEX idx_userName (userName)
 ) comment '用户' collate = utf8mb4_unicode_ci;
+-- 给user表新增飞书unionId字段，唯一约束（确保1个飞书用户仅关联1个系统用户）
+ALTER TABLE user
+    ADD COLUMN lark_union_id VARCHAR(256) NULL COMMENT '飞书用户全域唯一标识（关联lark_user_info.unionId）' AFTER userRole;
+
+-- 新增唯一索引，避免重复关联，同时提升查询效率
+CREATE UNIQUE INDEX idx_user_lark_union_id ON user(lark_union_id);
+
 
 -- 应用表
 create table if not exists app

@@ -17,13 +17,18 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import com.cao.caoaicodemother.model.entity.User;
 import com.cao.caoaicodemother.service.UserService;
+import com.cao.caoaicodemother.service.LarkService;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.List;
 
@@ -32,6 +37,7 @@ import java.util.List;
  *
  * @author 小曹同学
  */
+@Slf4j
 @Tag(name = "用户信息")
 @RestController
 @RequestMapping("/user")
@@ -39,6 +45,9 @@ public class UserController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private LarkService larkService;
 
     /**
      * 用户注册
@@ -188,4 +197,43 @@ public class UserController {
         userVOPage.setRecords(userVOList);
         return ResultUtils.success(userVOPage);
     }
+
+    /**
+     * 飞书授权登录 - 生成授权URL
+     */
+    @Operation(summary = "飞书授权登录")
+    @GetMapping("/lark/login")
+    public BaseResponse<String> larkLogin(@RequestParam(value = "state", required = false) String state) {
+        String authUrl = larkService.generateAuthUrl(state);
+        return ResultUtils.success(authUrl);
+    }
+
+
+    /**
+     * 飞书登录回调接口
+     */
+    @Operation(summary = "飞书登录回调")
+    @GetMapping("/larkCallback")
+    public RedirectView larkCallback(@RequestParam("code") String code,
+                                   @RequestParam(value = "state", required = false) String state,
+                                   HttpServletRequest request) {
+        try {
+            // 通过授权码登录
+            LoginUserVO loginUserVO = larkService.loginByCode(code, state, request);
+            log.info("飞书登录成功，用户信息：{}", loginUserVO);
+            if (loginUserVO == null){
+                throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "用户不存在");
+            }
+
+            // 重定向到前端页面，携带登录成功信息
+            String frontendUrl = "http://localhost:5173/"; // 前端地址
+            return new RedirectView(frontendUrl);
+            
+        } catch (Exception e) {
+            String frontendUrl = "https://www.codefather.cn/"; // 前端地址
+            return new RedirectView(frontendUrl);
+        }
+    }
+
+
 }

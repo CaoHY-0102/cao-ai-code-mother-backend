@@ -7,16 +7,21 @@ import cn.hutool.crypto.digest.DigestUtil;
 import com.cao.caoaicodemother.exception.BusinessException;
 import com.cao.caoaicodemother.exception.ErrorCode;
 import com.cao.caoaicodemother.model.dto.user.UserQueryRequest;
+import com.cao.caoaicodemother.model.entity.LarkUserInfo;
 import com.cao.caoaicodemother.model.enums.UserRoleEnum;
+import com.cao.caoaicodemother.model.vo.LarkUserInfoVO;
 import com.cao.caoaicodemother.model.vo.LoginUserVO;
 import com.cao.caoaicodemother.model.vo.UserVO;
+import com.cao.caoaicodemother.service.LarkService;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.cao.caoaicodemother.model.entity.User;
 import com.cao.caoaicodemother.mapper.UserMapper;
 import com.cao.caoaicodemother.service.UserService;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -33,6 +38,10 @@ import static com.cao.caoaicodemother.constant.UserConstant.USER_LOGIN_STATE;
 @Slf4j
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+
+    @Resource
+    @Lazy
+    private LarkService larkService;
 
 
     @Override
@@ -185,6 +194,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         LoginUserVO loginUserVO = new LoginUserVO();
         BeanUtil.copyProperties(user, loginUserVO);
+        // 关联飞书用户
+        String larkUnionId = user.getLarkUnionId();
+        if (larkUnionId != null) {
+            QueryWrapper queryWrapper = new QueryWrapper();
+            queryWrapper.eq("unionId", larkUnionId);
+            LarkUserInfo larkUserInfo = larkService.getOne(queryWrapper);
+            // 获取飞书用户信息
+            loginUserVO.setLarkUserInfoVO(LarkUserInfoVO.builder()
+                    .userId(larkUserInfo.getUserId())
+                    .name(larkUserInfo.getName())
+                    .openId(larkUserInfo.getOpenId())
+                    .unionId(larkUserInfo.getUnionId())
+                    .email(larkUserInfo.getEmail())
+                    .createTime(larkUserInfo.getCreateTime())
+                    .updateTime(larkUserInfo.getUpdateTime())
+                    .build());
+        }
         return loginUserVO;
     }
 }

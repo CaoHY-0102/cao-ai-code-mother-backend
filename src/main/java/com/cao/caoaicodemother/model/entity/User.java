@@ -76,6 +76,12 @@ public class User implements Serializable {
     private String userRole;
 
     /**
+     * 飞书用户统一ID
+     */
+    @Column("lark_union_id")
+    private String larkUnionId;
+
+    /**
      * 编辑时间
      */
     @Column("editTime")
