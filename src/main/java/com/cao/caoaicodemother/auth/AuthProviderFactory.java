@@ -46,10 +46,10 @@ public class AuthProviderFactory {
      */
     private AbstractAuthProvider getAuthProviderByType(AuthType authType) {
         switch (authType) {
-            case LARK:
+            case LARK -> {
                 return larkAuthProvider;
-            default:
-                throw new UnsupportedOperationException("不支持的认证类型: " + authType);
+            }
+            default -> throw new UnsupportedOperationException("不支持的认证类型: " + authType);
         }
     }
 

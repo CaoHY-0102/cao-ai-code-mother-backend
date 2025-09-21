@@ -81,7 +81,7 @@ public class LarkApiClientImpl extends AbstractApiClient implements LarkApiClien
             JSONObject jsonResponse = parseResponse(response);
 
             // 检查响应码
-            if (!isResponseSuccess(jsonResponse, 0)) {
+            if (!isResponseSuccess(jsonResponse)) {
                 String errorMsg = jsonResponse.getStr("msg", "获取访问令牌失败");
                 log.error("飞书获取访问令牌失败，错误码：{}，错误信息：{}",
                         jsonResponse.getInt("code"), errorMsg);
@@ -115,7 +115,7 @@ public class LarkApiClientImpl extends AbstractApiClient implements LarkApiClien
             log.info("飞书获取用户信息响应：{}", response);
             JSONObject jsonResponse = parseResponse(response);
 
-            if (!isResponseSuccess(jsonResponse, 0)) {
+            if (!isResponseSuccess(jsonResponse)) {
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "获取用户信息失败: " + jsonResponse.getStr("msg"));
             }
 

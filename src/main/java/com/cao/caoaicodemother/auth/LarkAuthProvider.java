@@ -2,7 +2,6 @@ package com.cao.caoaicodemother.auth;
 
 import cn.hutool.core.util.StrUtil;
 import com.cao.caoaicodemother.auth.client.LarkApiClient;
-import com.cao.caoaicodemother.config.LarkConfig;
 import com.cao.caoaicodemother.constant.UserConstant;
 import com.cao.caoaicodemother.exception.BusinessException;
 import com.cao.caoaicodemother.exception.ErrorCode;
@@ -16,8 +15,6 @@ import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-
 /**
  * 飞书认证提供者
  * 实现飞书平台的认证逻辑
@@ -28,9 +25,6 @@ import java.time.LocalDateTime;
 @Component
 public class LarkAuthProvider extends AbstractAuthProvider {
 
-    @Resource
-    private LarkConfig larkConfig;
-    
     @Resource
     private LarkApiClient larkApiClient;
     
@@ -109,7 +103,7 @@ public class LarkAuthProvider extends AbstractAuthProvider {
         }
         
         // 参数校验
-        if (larkUserInfo == null || StrUtil.isBlank(larkUserInfo.getUnionId())) {
+        if (StrUtil.isBlank(larkUserInfo.getUnionId())) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "飞书用户信息无效");
         }
 

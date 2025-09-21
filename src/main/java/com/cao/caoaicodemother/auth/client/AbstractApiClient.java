@@ -19,10 +19,7 @@ import java.util.Map;
  * @author 小曹同学
  */
 public abstract class AbstractApiClient {
-    
-    // 基础URL常量
-    protected static final String UTF_8 = StandardCharsets.UTF_8.name();
-    
+
     /**
      * 发送GET请求
      * @param url 请求URL
@@ -83,17 +80,17 @@ public abstract class AbstractApiClient {
     
     /**
      * 检查响应是否成功
+     *
      * @param jsonResponse JSON响应
-     * @param successCode 成功状态码
      * @return 是否成功
      */
-    protected boolean isResponseSuccess(JSONObject jsonResponse, int successCode) {
+    protected boolean isResponseSuccess(JSONObject jsonResponse) {
         if (jsonResponse == null) {
             return false;
         }
         
         int code = jsonResponse.getInt("code", -1);
-        return code == successCode;
+        return code == 0;
     }
     
     /**
@@ -102,21 +99,23 @@ public abstract class AbstractApiClient {
      * @return JSON对象，如果解析失败则返回null
      */
     protected JSONObject safeParseJson(Object obj) {
-        if (obj == null) {
-            return null;
-        }
-
-        if (obj instanceof JSONObject) {
-            return (JSONObject) obj;
-        }
-
-        if (obj instanceof String str) {
-            if (str.trim().startsWith("{")) {
-                try {
-                    return JSONUtil.parseObj(str);
-                } catch (Exception e) {
-                    return null;
+        switch (obj) {
+            case null -> {
+                return null;
+            }
+            case JSONObject entries -> {
+                return entries;
+            }
+            case String str -> {
+                if (str.trim().startsWith("{")) {
+                    try {
+                        return JSONUtil.parseObj(str);
+                    } catch (Exception e) {
+                        return null;
+                    }
                 }
+            }
+            default -> {
             }
         }
 

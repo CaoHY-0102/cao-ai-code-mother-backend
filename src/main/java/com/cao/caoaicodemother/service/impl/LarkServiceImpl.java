@@ -27,8 +27,6 @@ public class LarkServiceImpl extends ServiceImpl<LarkUserInfoMapper, LarkUserInf
     @Resource
     private AuthProviderFactory authProviderFactory;
 
-    @Resource
-    private UserService userService;
 
 
     @Override
