@@ -1,7 +1,5 @@
 package com.cao.caoaicodemother.model.vo;
 
-import com.cao.caoaicodemother.model.entity.LarkUserInfo;
-import com.mybatisflex.annotation.Column;
 import lombok.Data;
 
 import java.io.Serializable;

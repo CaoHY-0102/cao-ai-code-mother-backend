@@ -18,7 +18,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -224,7 +223,6 @@ public class UserController {
             if (loginUserVO == null){
                 throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "用户不存在");
             }
-
             // 重定向到前端页面，携带登录成功信息
             String frontendUrl = "http://localhost:5173/"; // 前端地址
             return new RedirectView(frontendUrl);
