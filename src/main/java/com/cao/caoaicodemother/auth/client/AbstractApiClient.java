@@ -86,11 +86,11 @@ public abstract class AbstractApiClient {
      */
     protected boolean isResponseSuccess(JSONObject jsonResponse) {
         if (jsonResponse == null) {
-            return false;
+            return true;
         }
         
         int code = jsonResponse.getInt("code", -1);
-        return code == 0;
+        return code != 0;
     }
     
     /**

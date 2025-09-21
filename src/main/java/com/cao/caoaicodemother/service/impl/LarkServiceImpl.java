@@ -6,7 +6,6 @@ import com.cao.caoaicodemother.model.entity.LarkUserInfo;
 import com.cao.caoaicodemother.model.entity.User;
 import com.cao.caoaicodemother.model.vo.LoginUserVO;
 import com.cao.caoaicodemother.service.LarkService;
-import com.cao.caoaicodemother.service.UserService;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.cao.caoaicodemother.mapper.LarkUserInfoMapper;
 import jakarta.annotation.Resource;
