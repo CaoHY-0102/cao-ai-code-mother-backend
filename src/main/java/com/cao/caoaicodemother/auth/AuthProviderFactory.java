@@ -1,6 +1,8 @@
 package com.cao.caoaicodemother.auth;
 
+import com.cao.caoaicodemother.model.enums.AuthTypeEnum;
 import jakarta.annotation.Resource;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -15,17 +17,12 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class AuthProviderFactory {
 
-    // 认证类型枚举
-    public enum AuthType {
-        LARK
-    }
-
-    // 通过Spring注入认证提供者实例
     @Resource
+    @Lazy
     private LarkAuthProvider larkAuthProvider;
 
     // 存储认证提供者实例的缓存
-    private final Map<AuthType, AbstractAuthProvider> authProviderCache = new ConcurrentHashMap<>();
+    private final Map<AuthTypeEnum, AbstractAuthProvider> authProviderCache = new ConcurrentHashMap<>();
 
     /**
      * 获取认证提供者实例
@@ -34,22 +31,22 @@ public class AuthProviderFactory {
      * @param authType 认证类型
      * @return 对应的认证提供者实例
      */
-    public AbstractAuthProvider getAuthProvider(AuthType authType) {
+    public AbstractAuthProvider getAuthProvider(AuthTypeEnum authType) {
         return authProviderCache.computeIfAbsent(authType, this::getAuthProviderByType);
     }
 
     /**
      * 根据认证类型获取对应的认证提供者
      * 
-     * @param authType 认证类型
+     * @param authTypeEnum 认证类型
      * @return 认证提供者实例
      */
-    private AbstractAuthProvider getAuthProviderByType(AuthType authType) {
-        switch (authType) {
+    private AbstractAuthProvider getAuthProviderByType(AuthTypeEnum authTypeEnum) {
+        switch (authTypeEnum) {
             case LARK -> {
                 return larkAuthProvider;
             }
-            default -> throw new UnsupportedOperationException("不支持的认证类型: " + authType);
+            default -> throw new UnsupportedOperationException("不支持的认证类型: " + authTypeEnum);
         }
     }
 
@@ -60,6 +57,6 @@ public class AuthProviderFactory {
      * @return 飞书认证提供者实例
      */
     public AbstractAuthProvider getLarkAuthProvider() {
-        return getAuthProvider(AuthType.LARK);
+        return getAuthProvider(AuthTypeEnum.LARK);
     }
 }

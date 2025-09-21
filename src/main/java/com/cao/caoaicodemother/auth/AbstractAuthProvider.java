@@ -11,13 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * @author 小曹同学
  */
 public abstract class AbstractAuthProvider {
-    
-    /**
-     * 生成授权URL
-     * @param state 状态参数
-     * @return 授权URL
-     */
-    public abstract String generateAuthUrl(String state);
+
     
     /**
      * 通过授权码获取用户信息并登录

@@ -12,13 +12,6 @@ import com.cao.caoaicodemother.model.entity.User;
 public interface LarkApiClient {
     
     /**
-     * 生成飞书授权URL
-     * @param state 状态参数
-     * @return 授权URL
-     */
-    String generateAuthUrl(String state);
-    
-    /**
      * 通过授权码获取用户访问令牌
      * @param code 授权码
      * @return 访问令牌

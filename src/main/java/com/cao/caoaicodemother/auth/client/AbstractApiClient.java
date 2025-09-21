@@ -1,21 +1,16 @@
 package com.cao.caoaicodemother.auth.client;
 
-import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
-import com.cao.caoaicodemother.exception.BusinessException;
-import com.cao.caoaicodemother.exception.ErrorCode;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
  * 抽象API客户端
  * 提供第三方API调用的通用功能
- * 
+ *
  * @author 小曹同学
  */
 public abstract class AbstractApiClient {
@@ -27,19 +22,15 @@ public abstract class AbstractApiClient {
      * @return 响应内容
      */
     protected String doGet(String url, Map<String, String> headers) {
-        try {
-            HttpRequest request = HttpUtil.createGet(url);
-            
-            if (headers != null && !headers.isEmpty()) {
-                headers.forEach(request::header);
-            }
-            
-            return request.execute().body();
-        } catch (Exception e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "HTTP GET请求失败: " + e.getMessage());
+        HttpRequest request = HttpUtil.createGet(url);
+
+        if (headers != null && !headers.isEmpty()) {
+            headers.forEach(request::header);
         }
+
+        return request.execute().body();
     }
-    
+
     /**
      * 发送POST请求
      * @param url 请求URL
@@ -48,36 +39,32 @@ public abstract class AbstractApiClient {
      * @return 响应内容
      */
     protected String doPost(String url, Map<String, String> headers, Map<String, Object> params) {
-        try {
-            HttpRequest request = HttpUtil.createPost(url);
-            
-            if (headers != null && !headers.isEmpty()) {
-                headers.forEach(request::header);
-            }
-            
-            if (params != null && !params.isEmpty()) {
-                request.form(params);
-            }
-            
-            return request.execute().body();
-        } catch (Exception e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "HTTP POST请求失败: " + e.getMessage());
+        HttpRequest request = HttpUtil.createPost(url);
+
+        if (headers != null && !headers.isEmpty()) {
+            headers.entrySet().forEach(entry -> {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                request.header(key, value);
+            });
         }
+
+        if (params != null && !params.isEmpty()) {
+            request.form(params);
+        }
+
+        return request.execute().body();
     }
-    
+
     /**
      * 解析JSON响应
      * @param response 响应内容
      * @return JSON对象
      */
     protected JSONObject parseResponse(String response) {
-        try {
-            return JSONUtil.parseObj(response);
-        } catch (Exception e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "解析响应失败: " + e.getMessage());
-        }
+        return JSONUtil.parseObj(response);
     }
-    
+
     /**
      * 检查响应是否成功
      *
@@ -88,11 +75,11 @@ public abstract class AbstractApiClient {
         if (jsonResponse == null) {
             return true;
         }
-        
+
         int code = jsonResponse.getInt("code", -1);
         return code != 0;
     }
-    
+
     /**
      * 安全地解析JSON对象，处理可能的格式异常
      * @param obj 要解析的对象
@@ -120,17 +107,5 @@ public abstract class AbstractApiClient {
         }
 
         return null;
-    }
-    
-    /**
-     * URL编码
-     * @param value 要编码的值
-     * @return 编码后的值
-     */
-    protected String urlEncode(String value) {
-        if (StrUtil.isBlank(value)) {
-            return "";
-        }
-        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 }

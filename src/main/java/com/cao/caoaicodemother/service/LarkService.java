@@ -1,7 +1,6 @@
 package com.cao.caoaicodemother.service;
 
 import com.cao.caoaicodemother.model.entity.LarkUserInfo;
-import com.cao.caoaicodemother.model.entity.User;
 import com.cao.caoaicodemother.model.vo.LoginUserVO;
 import com.mybatisflex.core.service.IService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,14 +13,6 @@ import jakarta.servlet.http.HttpServletRequest;
 public interface LarkService extends IService<LarkUserInfo> {
 
     /**
-     * 生成飞书授权URL
-     *
-     * @param state 状态参数
-     * @return 授权URL
-     */
-    String generateAuthUrl(String state);
-
-    /**
      * 通过授权码获取用户信息并登录
      *
      * @param code 授权码
@@ -31,13 +22,6 @@ public interface LarkService extends IService<LarkUserInfo> {
      */
     LoginUserVO loginByCode(String code, String state, HttpServletRequest request);
 
-    /**
-     * 通过飞书用户信息创建或更新本地用户
-     *
-     * @param larkUserInfo 飞书用户信息
-     * @return 本地用户信息
-     */
-    User createOrUpdateUser(LarkUserInfo larkUserInfo);
 
 
 }

@@ -56,4 +56,8 @@ knife4j:
 lark:
   clientId: cli_a84cc126327ad00b
   clientSecret: YwN3sTu3ogC0PGaQgCw2igKg7NFxVcuC
-  redirectUri: http://localhost:8123/api/user/larkCallback
+  redirectUri: http://localhost:8123/api/lark/callback
+
+# URL 配置
+frontend:
+  base-url: http://localhost:5173
